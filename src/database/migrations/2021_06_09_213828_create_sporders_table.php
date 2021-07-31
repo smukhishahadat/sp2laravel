@@ -19,7 +19,7 @@ class CreateSpordersTable extends Migration
             $table->string('bank_trx_id')->nullable();
             $table->double('amount',5,2);
             $table->integer('status')->nullable();
-            $table->integer('inv_id');
+            $table->text('inv_id');
             $table->text('response');
             $table->timestamps();
         });
