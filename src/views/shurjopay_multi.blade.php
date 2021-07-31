@@ -215,8 +215,8 @@
         }
 
         .login label {
-            background-color: #363b41;
-            background-color: var(--loginLabelBackgroundColor);
+            background-color: #010101;
+            background-color: #383938;;
             border-bottom-right-radius: 0;
             border-top-right-radius: 0;
             padding-left: 1.25rem;
@@ -296,42 +296,47 @@
 
 
     </div>
-    <form autocomplete="off" action="{{route('shurjopay')}}" method="POST" class="form login">
+    <form autocomplete="off" action="{{route('shurjopay_multi_save')}}" method="POST" class="form login">
         @csrf
-{{--        @csrf
-        <input type="text" name="username" placeholder="Username" class="">    <br>
-        <input type="password" name="password" placeholder="Password" class="">    <br>
-        <input type="text" name="uniquekey" placeholder="Prefix" class="">    <br>
-        <input type="text" name="returnurl" placeholder="Return Url" class="">    <br>
-        <input type="text" name="ipn" placeholder="ipn" class="">    <br>
-        <input type="submit" value="Save">--}}
-        <div class="form__field">
 
-            <input id="username" type="text" name="username" class="form__input" placeholder="Username" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_USERNAME') }}" style="color: black;">
+        <div class="form__field">
+            <label>  Store ID : &nbsp;&nbsp;&nbsp;&nbsp;</label>
+            <input id="store_id" type="text" name="store_id" class="form__input" placeholder="Store ID" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required  style="color: black;">
 
         </div>
 
         <div class="form__field">
-
-            <input id="password" type="text" name="password" class="form__input" placeholder="Password" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_PASSWORD') }}" style="color: black;">
-
-        </div>
-
-        <div class="form__field">
-
-            <input id="uniquekey" type="text" name="uniquekey" class="form__input" placeholder="Prefix" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_UNIQUE_KEY') }}" style="color: black;">
+            <label>  User Name : </label>
+            <input id="username" type="text" name="username" class="form__input" placeholder="Username" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required  style="color: black;">
 
         </div>
 
         <div class="form__field">
-
-            <input id="returnurl" type="text" name="returnurl" class="form__input" placeholder="Return Url" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_RETURN_URL') }}" style="color: black;">
+            <label>  Password : &nbsp;&nbsp;</label>
+            <input id="password" type="text" name="password" class="form__input" placeholder="Password" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required  style="color: black;">
 
         </div>
 
         <div class="form__field">
+            <label>  Uniquekey : &nbsp;</label>
 
-            <input id="ipn" type="text" name="ipn" class="form__input" placeholder="ipn" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_IPN') }}" style="color: black;">
+            <input id="uniquekey" type="text" name="uniquekey" class="form__input" placeholder="Prefix" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required  style="color: black;">
+
+        </div>
+
+        <div class="form__field">
+            <label> Return URL :</label>
+
+            <input id="returnurl" type="text" name="returnurl" class="form__input" placeholder="Return Url" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required  style="color: black;">
+
+        </div>
+
+
+
+        <div class="form__field">
+            <label> IPN : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+
+            <input id="ipn" type="text" name="ipn" class="form__input" placeholder="IPN" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required  style="color: black;">
 
         </div>
 

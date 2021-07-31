@@ -17,6 +17,7 @@ class CreateSpsetupsTable extends Migration
             $table->id();
             $table->string('username');
             $table->string('password');
+            $table->integer('store_id')->unique();
             $table->string('uniquekey');
             $table->string('returnurl');
             $table->string('ipn');

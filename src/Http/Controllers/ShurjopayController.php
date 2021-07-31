@@ -1,6 +1,7 @@
 <?php
 
 namespace shurjopay\ShurjopayLaravelPackage\Http\Controllers;
+use App\Models\SchoolInfo;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use shurjopay\ShurjopayLaravelPackage\Models\Sporder;
@@ -11,6 +12,17 @@ class ShurjopayController extends Controller
     public function index($value='')
     {
         return view('shurjopay::shurjopay');
+    }
+    public function multi_list($value='')
+    {
+        $data=Spsetup::get();
+        return view('shurjopay::multivendor')->with(['data' => $data]);
+
+    }
+    public function multi_setup($value='')
+    {
+        return view('shurjopay::shurjopay_multi');
+
     }
     public function send(Request $request)
     {
@@ -26,7 +38,8 @@ class ShurjopayController extends Controller
                 'password'=>$request->password,
                 'uniquekey'=>$request->uniquekey,
                 'returnurl'=>$request->returnurl,
-              'ipn'=>$request->ipn,
+                'ipn'=>$request->ipn,
+                'store_id'=>0,
                 'updated_at'=>date('Y-m-d h:i:s')
             );
 
@@ -50,10 +63,40 @@ class ShurjopayController extends Controller
         else
         {
             $data= new Spsetup();
+            $data->username=$request->username;
+            $data->password=$request->password;
+            $data->uniquekey=$request->uniquekey;
+            $data->returnurl=$request->returnurl;
+            $data->ipn=$request->ipn;
+            $data->store_id=0;
+            $data->created_at=date('Y-m-d h:i:s');
+
+            $data->save();
+            $data_username=$request->username;
+            $data_password=$request->password;
+            $data_uniquekey=$request->uniquekey;
+            $data_returnurl=$request->returnurl;
+            $data_ipn=$request->ipn;
+            $this->overWriteEnvFile("MERCHANT_USERNAME", $data_username);
+            $this->overWriteEnvFile("MERCHANT_PASSWORD", $data_password);
+            $this->overWriteEnvFile("MERCHANT_UNIQUE_KEY", $data_uniquekey);
+            $this->overWriteEnvFile("MERCHANT_RETURN_URL", $data_returnurl);
+            $this->overWriteEnvFile("MERCHANT_IPN", $data_ipn);
+
+            /*            Spsetup::create($request->all());*/
+            $actual_link = 'http://' . $_SERVER['HTTP_HOST'];
+        }
+        return redirect($actual_link);
+    }
+    public function send_multi(Request $request)
+    {
+
+            $data= new Spsetup();
                  $data->username=$request->username;
                  $data->password=$request->password;
                  $data->uniquekey=$request->uniquekey;
                  $data->returnurl=$request->returnurl;
+                 $data->store_id=$request->store_id;
                  $data->ipn=$request->ipn;
                  $data->created_at=date('Y-m-d h:i:s');
 
@@ -69,9 +112,8 @@ class ShurjopayController extends Controller
             $this->overWriteEnvFile("MERCHANT_RETURN_URL", $data_returnurl);
             $this->overWriteEnvFile("MERCHANT_IPN", $data_ipn);
 
-/*            Spsetup::create($request->all());*/
-        }
-        return redirect(route('shurjopay'));
+
+        return redirect(route('shurjopay_multi_list'));
     }
 
     //mowmita
@@ -96,7 +138,8 @@ class ShurjopayController extends Controller
 'customer_country' => "customer_country",
 );*/
 
-    public function checkout($info){
+    //$store_id is not required param for single vendored application
+    public function checkout($info,$store_id=0){
         $flag=0;
         if(!isset($info['prefix']))
         {
@@ -135,7 +178,15 @@ class ShurjopayController extends Controller
         }
         if($flag==0)
         {
-            $response = $this->getUrl($info);
+            if($store_id==0)
+            {
+                $response = $this->getUrl($info);
+            }
+            else
+            {
+                $response = $this->getUrl($info,4);
+            }
+
             $arr = json_decode($response);
             $url = ($arr->checkout_url);
             $order_id = ($arr->sp_order_id);
@@ -151,9 +202,20 @@ class ShurjopayController extends Controller
             return redirect($url);
         }
     }
-    private function getToken() {
-        $user= env('MERCHANT_USERNAME');
-        $pass= env('MERCHANT_PASSWORD');
+    private function getToken($store_id=0) {
+        if($store_id==0)
+        {
+            $user= env('MERCHANT_USERNAME');
+            $pass= env('MERCHANT_PASSWORD');
+        }
+        else
+        {
+            $data=Spsetup::where('store_id',$store_id)->get();
+            $user= $data[0]->username;
+            $pass= $data[0]->password;
+
+        }
+
 
         $curl = curl_init();
 
@@ -180,8 +242,15 @@ class ShurjopayController extends Controller
         curl_close($curl);
         return $response;
     }
-    private function getUrl($info) {
-        $response=$this->getToken();
+    private function getUrl($info,$store_id=0) {
+        if($store_id==0)
+        {
+            $response=$this->getToken();
+
+        }else{
+            $response=$this->getToken($store_id);
+
+        }
         $arr=json_decode($response);
         $tok=($arr->token);
         $s_id=($arr->store_id);
@@ -219,11 +288,11 @@ class ShurjopayController extends Controller
         }
 
     }
-    private function verify($order_id) {
+    private function verify($order_id,$store_id=0) {
         $order_id = array(
             'order_id' => $order_id);
         $order_id=json_encode($order_id);
-        $response=$this->getToken();
+        $response=$this->getToken($store_id=0);
         $arr=json_decode($response);
         $tok=($arr->token);
         $curl = curl_init();
@@ -253,15 +322,13 @@ class ShurjopayController extends Controller
 
 
     }
-
-
-    public function return($id=null)
+    public function return($id=null,$store_id=0)
     {
         //$actual_link = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
         //$query_str = parse_url($actual_link, PHP_URL_QUERY);
        // parse_str($query_str, $query_params);
         $orderID =$id; //$query_params['order_id'];
-        $response=$this->verify($orderID);
+        $response=$this->verify($orderID,$store_id);
         $object=Sporder::find(1);
         $object = Sporder::where('order_id',$orderID)->first();
         $object->response=$response;
