@@ -216,7 +216,7 @@
 
         .login label {
             background-color: #010101;
-            background-color: #383938;;
+            background-color: #383938;
             border-bottom-right-radius: 0;
             border-top-right-radius: 0;
             padding-left: 1.25rem;

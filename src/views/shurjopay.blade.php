@@ -215,9 +215,8 @@
         }
 
         .login label {
-            background-color: #363b41;
-            background-color: var(--loginLabelBackgroundColor);
-            border-bottom-right-radius: 0;
+            background-color: #010101;
+            background-color: #383938;            border-bottom-right-radius: 0;
             border-top-right-radius: 0;
             padding-left: 1.25rem;
             padding-right: 1.25rem;
@@ -306,31 +305,31 @@
         <input type="text" name="ipn" placeholder="ipn" class="">    <br>
         <input type="submit" value="Save">--}}
         <div class="form__field">
-
+            <label>  User Name : </label>
             <input id="username" type="text" name="username" class="form__input" placeholder="Username" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_USERNAME') }}" style="color: black;">
 
         </div>
 
         <div class="form__field">
-
+            <label>  Password : &nbsp;&nbsp;</label>
             <input id="password" type="text" name="password" class="form__input" placeholder="Password" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_PASSWORD') }}" style="color: black;">
 
         </div>
 
         <div class="form__field">
-
+            <label>  Uniquekey : &nbsp;</label>
             <input id="uniquekey" type="text" name="uniquekey" class="form__input" placeholder="Prefix" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_UNIQUE_KEY') }}" style="color: black;">
 
         </div>
 
         <div class="form__field">
-
+            <label> Return URL :</label>
             <input id="returnurl" type="text" name="returnurl" class="form__input" placeholder="Return Url" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_RETURN_URL') }}" style="color: black;">
 
         </div>
 
         <div class="form__field">
-
+            <label> IPN : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
             <input id="ipn" type="text" name="ipn" class="form__input" placeholder="ipn" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');" required value="{{ env('MERCHANT_IPN') }}" style="color: black;">
 
         </div>

@@ -84,8 +84,9 @@ class ShurjopayController extends Controller
             $this->overWriteEnvFile("MERCHANT_IPN", $data_ipn);
 
             /*            Spsetup::create($request->all());*/
-            $actual_link = 'http://' . $_SERVER['HTTP_HOST'];
+
         }
+        $actual_link = 'http://'.$_SERVER['HTTP_HOST'];
         return redirect($actual_link);
     }
     public function send_multi(Request $request)
@@ -106,12 +107,6 @@ class ShurjopayController extends Controller
             $data_uniquekey=$request->uniquekey;
             $data_returnurl=$request->returnurl;
             $data_ipn=$request->ipn;
-            $this->overWriteEnvFile("MERCHANT_USERNAME", $data_username);
-            $this->overWriteEnvFile("MERCHANT_PASSWORD", $data_password);
-            $this->overWriteEnvFile("MERCHANT_UNIQUE_KEY", $data_uniquekey);
-            $this->overWriteEnvFile("MERCHANT_RETURN_URL", $data_returnurl);
-            $this->overWriteEnvFile("MERCHANT_IPN", $data_ipn);
-
 
         return redirect(route('shurjopay_multi_list'));
     }
@@ -184,62 +179,92 @@ class ShurjopayController extends Controller
             }
             else
             {
-                $response = $this->getUrl($info,4);
+                $response = $this->getUrl($info,$store_id);
             }
 
-            $arr = json_decode($response);
-            $url = ($arr->checkout_url);
-            $order_id = ($arr->sp_order_id);
-            $order = new Sporder();
-            $order->bank_trx_id = $order_id.rand(10000,99999) ;
-            $order->order_id = $order_id ;
-            $order->response = 0;
 
-            $order->amount = $info['amount'];
-            $order->inv_id = $info['order_id'];
-            $order->status =0;
-            $order->save();
-            return redirect($url);
+            $arr = json_decode($response);
+            if(!empty($arr->checkout_url))
+            {
+                $url = ($arr->checkout_url);
+                $order_id = ($arr->sp_order_id);
+                $order = new Sporder();
+                $order->bank_trx_id = $order_id.rand(10000,99999) ;
+                $order->order_id = $order_id ;
+                $order->response = 0;
+
+                $order->amount = $info['amount'];
+                $order->inv_id = $info['order_id'];
+                $order->status =0;
+                $order->save();
+                return redirect($url);
+            }
+            else{
+                return $response;
+            }
+
         }
     }
     private function getToken($store_id=0) {
+        $userExists=false;
+
         if($store_id==0)
         {
-            $user= env('MERCHANT_USERNAME');
-            $pass= env('MERCHANT_PASSWORD');
+            if(!empty(env('MERCHANT_USERNAME')) && !empty(env('MERCHANT_PASSWORD')))
+            {
+                $user= env('MERCHANT_USERNAME');
+                $pass= env('MERCHANT_PASSWORD');
+                $userExists=true;
+            }
+
         }
         else
         {
-            $data=Spsetup::where('store_id',$store_id)->get();
-            $user= $data[0]->username;
-            $pass= $data[0]->password;
 
+            $data=Spsetup::where('store_id',$store_id)->get();
+            if(!empty($data[0]->username) && !empty($data[0]->username) )
+            {
+                $user= $data[0]->username;
+                $pass= $data[0]->password;
+                $userExists=true;
+            }
+
+
+
+        }
+        if($userExists)
+        {
+            $curl = curl_init();
+
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://engine.shurjopayment.com/api/get_token',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS =>'{
+                                            "username": "'.$user.'",
+                                            "password": "'.$pass.'"
+                                        }',
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/json'
+                ),
+            ));
+
+            $response = curl_exec($curl);
+
+            curl_close($curl);
+        }
+        else
+        {
+            $response="Please enter valid username and password";
         }
 
 
-        $curl = curl_init();
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://engine.shurjopayment.com/api/get_token',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS =>'{
-    "username": "'.$user.'",
-    "password": "'.$pass.'"
-}',
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json'
-            ),
-        ));
-
-        $response = curl_exec($curl);
-
-        curl_close($curl);
         return $response;
     }
     private function getUrl($info,$store_id=0) {
@@ -247,43 +272,53 @@ class ShurjopayController extends Controller
         {
             $response=$this->getToken();
 
+
         }else{
             $response=$this->getToken($store_id);
 
         }
+
         $arr=json_decode($response);
-        $tok=($arr->token);
-        $s_id=($arr->store_id);
 
-        $info2=array(
-            'token'=>$tok,
-            'store_id'=>$s_id);
-        $final_array=array_merge($info2, $info);
-        $bodyJson=json_encode($final_array);
-        $curl = curl_init();
+        if(!empty($arr->token))
+        {
+            $tok=($arr->token);
+            $s_id=($arr->store_id);
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://engine.shurjopayment.com/api/secret-pay',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS =>$bodyJson,
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json'
-            ),
-        ));
+            $info2=array(
+                'token'=>$tok,
+                'store_id'=>$s_id);
+            $final_array=array_merge($info2, $info);
+            $bodyJson=json_encode($final_array);
+            $curl = curl_init();
 
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-        curl_close($curl);
-        if ($err) {
-            echo "cURL Error #:" . $err;
-            exit();
-        }else{
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://engine.shurjopayment.com/api/secret-pay',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS =>$bodyJson,
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/json'
+                ),
+            ));
+
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+            curl_close($curl);
+            if ($err) {
+                echo "cURL Error #:" . $err;
+                exit();
+            }else{
+                return $response;
+            }
+
+        }
+        else{
             return $response;
         }
 
@@ -292,31 +327,37 @@ class ShurjopayController extends Controller
         $order_id = array(
             'order_id' => $order_id);
         $order_id=json_encode($order_id);
-        $response=$this->getToken($store_id=0);
+        $response=$this->getToken($store_id);
+
         $arr=json_decode($response);
-        $tok=($arr->token);
-        $curl = curl_init();
+        if(!empty($arr->token))
+        {
+            $tok=($arr->token);
+            $curl = curl_init();
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://engine.shurjopayment.com/api/verification',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS =>$order_id
-,
-            CURLOPT_HTTPHEADER => array(
-                'Authorization:Bearer '.$tok,
-                'Content-Type: application/json'
-            ),
-        ));
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => 'https://engine.shurjopayment.com/api/verification',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS =>$order_id
+            ,
+                CURLOPT_HTTPHEADER => array(
+                    'Authorization:Bearer '.$tok,
+                    'Content-Type: application/json'
+                ),
+            ));
 
-        $response = curl_exec($curl);
+            $response = curl_exec($curl);
 
-        curl_close($curl);
+            curl_close($curl);
+        }
+
+
         return $response;
 
 
@@ -324,30 +365,40 @@ class ShurjopayController extends Controller
     }
     public function return($id=null,$store_id=0)
     {
+
         //$actual_link = 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
         //$query_str = parse_url($actual_link, PHP_URL_QUERY);
        // parse_str($query_str, $query_params);
         $orderID =$id; //$query_params['order_id'];
         $response=$this->verify($orderID,$store_id);
-        $object=Sporder::find(1);
+
+
         $object = Sporder::where('order_id',$orderID)->first();
         $object->response=$response;
         $arr=json_decode($response);
-
-        if(!empty($arr[0]->bank_trx_id))
+        if(!empty($arr[0]->sp_code))
         {
-            $bank=($arr[0]->bank_trx_id);
-            $object->bank_trx_id=$bank;
+            if(!empty($arr[0]->bank_trx_id))
+            {
+                $bank=($arr[0]->bank_trx_id);
+                $object->bank_trx_id=$bank;
+
+
+            }
             $object->status =$arr[0]->sp_code;
+            $object->save();
+            $inv_no=$arr[0]->customer_order_id;
+            /*     print_r($object);
+                 exit()*/;
+           // $actual_link = env('MERCHANT_RETURN_URL')."/".$inv_no;
 
         }
+        else{
+            echo $response;
+            exit();
+        }
+/*     */
 
-        $object->save();
-        $inv_no=$arr[0]->customer_order_id;
-   /*     print_r($object);
-        exit()*/;
-        $actual_link = env('MERCHANT_RETURN_URL')."/".$inv_no;
-        return $response;
        // return redirect($actual_link);
 
     }
