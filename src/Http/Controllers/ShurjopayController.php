@@ -391,6 +391,7 @@ class ShurjopayController extends Controller
             /*     print_r($object);
                  exit()*/;
            // $actual_link = env('MERCHANT_RETURN_URL')."/".$inv_no;
+            return $response;
 
         }
         else{
