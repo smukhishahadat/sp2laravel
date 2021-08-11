@@ -8,9 +8,9 @@ After successful installation of shurjopay-laravel-package, go to your project a
 shurjopay\ShurjopayLaravelPackage\ShurjopayServiceProvider::class,
 
 
-* * Add this to your controller
+* Add this to your controller
 use shurjopay\ShurjopayLaravelPackage\Http\Controllers\ShurjopayController;
 
-* * Call payment method
+* Call payment method
 $shurjopay_service = new ShurjopayController();
 return $shurjopay_service->checkout($info,$school_id);
